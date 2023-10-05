@@ -54,22 +54,29 @@ class CPUSelectMenu(pgt.MenuScreen):
 		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 100))
 
 class PyongGame(pgt.GameScreen):
-	PADDLE_SPEED = 5
-	BALL_SPEED = 7
+	PADDLE_SPEED = 2
+	BALL_SPEED = 5
 	BOUNCE_ANGLE = 1.047198 # 60 deg
 
 	def __init__(self, parent: pgt.MenuScreen, player2_type: Player2Type):
-		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, parent.frame_rate)
+		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, 60)
 		self.font = parent.font
 		self.player2_type = player2_type
 		self.paddle_size = Point(5, 50)
-		paddle_center = self.window_size.y // 2 - self.paddle_size.y // 2
-		self.player1_paddle_rect = Rect(3, paddle_center, *self.paddle_size)
-		self.player2_paddle_rect = Rect(self.window_size.x - self.paddle_size.x - 3, paddle_center, *self.paddle_size)
-		ball_size = Point(6, 6)
-		self.ball_rect = pygame.Rect(*(self.window_size // 2 - ball_size // 2), *ball_size)
-		self.ball_velocity = Point(self.BALL_SPEED, 0)
+		self.paddle_x = 0
+		self.player1_paddle_rect = Rect(0, 0, *self.paddle_size)
+		self.player2_paddle_rect = Rect(0, 0, *self.paddle_size)
+		self.ball_rect = pygame.Rect(0, 0, 6, 6)
+		self.reset_ball_and_paddles()
 		self.score = [0, 0]
+
+	def reset_ball_and_paddles(self):
+		self.ball_rect.center = self.window_size // 2
+		self.ball_velocity = Point(self.BALL_SPEED, 0)
+		self.player1_paddle_rect.left = 0
+		self.player2_paddle_rect.right = self.window_size.x
+		self.player1_paddle_rect.centery = self.player2_paddle_rect.centery = self.window_size.y // 2
+
 
 	def draw_paddle(self, position: Point):
 		pygame.draw.rect(self.screen, 'white', (position, self.paddle_size))
@@ -124,15 +131,25 @@ class PyongGame(pgt.GameScreen):
 		elif self.ball_rect.bottom >= self.window_size.y:
 			self.ball_rect.bottom = self.window_size.y - (self.ball_rect.bottom - self.window_size.y)
 			self.ball_velocity.y *= -1
+		if self.ball_rect.left < 0:
+			self.score[1] += 1
+			self.reset_ball_and_paddles()
+		elif self.ball_rect.right >= self.window_size.y:
+			self.score[0] += 1
+			self.reset_ball_and_paddles()
 		collide_player1 = self.player1_paddle_rect.colliderect(self.ball_rect)
 		collide_player2 = self.player2_paddle_rect.colliderect(self.ball_rect)
 		if collide_player1 or collide_player2:
 			# https://gamedev.stackexchange.com/questions/4253/in-pong-how-do-you-calculate-the-balls-direction-when-it-bounces-off-the-paddl
-			bounce_angle = (self.player1_paddle_rect.centery - self.ball_rect.y) // ( self.paddle_size.y // 2) * self.BOUNCE_ANGLE
+			paddle_center_y = self.player1_paddle_rect.centery if collide_player1 else self.player2_paddle_rect.centery
+			bounce_angle = (paddle_center_y - self.ball_rect.centery) / ( self.paddle_size.y / 2) * self.BOUNCE_ANGLE
 			self.ball_velocity.x = self.BALL_SPEED * cos(bounce_angle)
 			self.ball_velocity.y = self.BALL_SPEED * sin(bounce_angle)
 			if collide_player2:
 				self.ball_velocity.x *= -1
+				self.ball_rect.right = self.player2_paddle_rect.left
+			else:
+				self.ball_rect.left = self.player1_paddle_rect.right
 
 
 	def update(self):
