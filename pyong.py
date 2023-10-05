@@ -6,6 +6,7 @@ import pygame_tools as pgt
 from pygame_tools import Point
 from pygame.locals import *
 from enum import Enum
+from math import sin, cos
 
 class Player2Type(Enum):
 	HUMAN = 1
@@ -53,20 +54,22 @@ class CPUSelectMenu(pgt.MenuScreen):
 		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 100))
 
 class PyongGame(pgt.GameScreen):
-	PADDLE_SPEED = 3
+	PADDLE_SPEED = 5
+	BALL_SPEED = 7
+	BOUNCE_ANGLE = 1.047198 # 60 deg
 
 	def __init__(self, parent: pgt.MenuScreen, player2_type: Player2Type):
 		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, parent.frame_rate)
 		self.font = parent.font
 		self.player2_type = player2_type
 		self.paddle_size = Point(5, 50)
-		self.player1_paddle_rect = Rect(3, 0, *self.paddle_size)
-		self.player2_paddle_rect = Rect(self.window_size.x - self.paddle_size.x - 3, 0, *self.paddle_size)
+		paddle_center = self.window_size.y // 2 - self.paddle_size.y // 2
+		self.player1_paddle_rect = Rect(3, paddle_center, *self.paddle_size)
+		self.player2_paddle_rect = Rect(self.window_size.x - self.paddle_size.x - 3, paddle_center, *self.paddle_size)
 		ball_size = Point(6, 6)
 		self.ball_rect = pygame.Rect(*(self.window_size // 2 - ball_size // 2), *ball_size)
-		self.ball_velocity = Point(0, 2)
+		self.ball_velocity = Point(self.BALL_SPEED, 0)
 		self.score = [0, 0]
-
 
 	def draw_paddle(self, position: Point):
 		pygame.draw.rect(self.screen, 'white', (position, self.paddle_size))
@@ -91,6 +94,27 @@ class PyongGame(pgt.GameScreen):
 			if self.player1_paddle_rect.bottom > self.window_size.y:
 				self.player1_paddle_rect.bottom = self.window_size.y
 
+	def player2_move(self):
+		keys = pygame.key.get_pressed()
+		match self.player2_type:
+			case Player2Type.HUMAN:
+				if keys[K_UP]:
+					self.player2_paddle_rect.y -= self.PADDLE_SPEED
+					if self.player2_paddle_rect.top < 0:
+						self.player2_paddle_rect.top = 0
+				if keys[K_DOWN]:
+					self.player2_paddle_rect.y += self.PADDLE_SPEED
+					if self.player2_paddle_rect.bottom > self.window_size.y:
+						self.player2_paddle_rect.bottom = self.window_size.y
+			case Player2Type.EASY_CPU:
+				if self.player2_paddle_rect.centery < self.ball_rect.centery:
+					self.player2_paddle_rect.centery += self.PADDLE_SPEED
+				elif self.player2_paddle_rect.centery > self.ball_rect.centery:
+					self.player2_paddle_rect.centery -= self.PADDLE_SPEED
+			case Player2Type.HARD_CPU:
+				# TODO: calculate trajectory
+				pass
+
 
 	def update_ball(self):
 		self.ball_rect.topleft += self.ball_velocity
@@ -100,6 +124,16 @@ class PyongGame(pgt.GameScreen):
 		elif self.ball_rect.bottom >= self.window_size.y:
 			self.ball_rect.bottom = self.window_size.y - (self.ball_rect.bottom - self.window_size.y)
 			self.ball_velocity.y *= -1
+		collide_player1 = self.player1_paddle_rect.colliderect(self.ball_rect)
+		collide_player2 = self.player2_paddle_rect.colliderect(self.ball_rect)
+		if collide_player1 or collide_player2:
+			# https://gamedev.stackexchange.com/questions/4253/in-pong-how-do-you-calculate-the-balls-direction-when-it-bounces-off-the-paddl
+			bounce_angle = (self.player1_paddle_rect.centery - self.ball_rect.y) // ( self.paddle_size.y // 2) * self.BOUNCE_ANGLE
+			self.ball_velocity.x = self.BALL_SPEED * cos(bounce_angle)
+			self.ball_velocity.y = self.BALL_SPEED * sin(bounce_angle)
+			if collide_player2:
+				self.ball_velocity.x *= -1
+
 
 	def update(self):
 		self.screen.fill('black')
@@ -108,6 +142,7 @@ class PyongGame(pgt.GameScreen):
 		self.draw_ball()
 		self.draw_score()
 		self.player1_move()
+		self.player2_move()
 		self.update_ball()
 
 def main():
