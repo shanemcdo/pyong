@@ -114,6 +114,7 @@ class PyongGame(pgt.GameScreen):
 					if self.player2_paddle_rect.bottom > self.window_size.y:
 						self.player2_paddle_rect.bottom = self.window_size.y
 			case Player2Type.EASY_CPU:
+				# TODO make this medium and limit range on easy
 				if self.player2_paddle_rect.centery < self.ball_rect.centery:
 					self.player2_paddle_rect.centery += self.PADDLE_SPEED
 				elif self.player2_paddle_rect.centery > self.ball_rect.centery:
