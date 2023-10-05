@@ -4,6 +4,7 @@ import sys
 import pygame
 import pygame_tools as pgt
 from pygame_tools import Point
+from pygame.locals import *
 from enum import Enum
 
 class Player2Type(Enum):
@@ -52,15 +53,18 @@ class CPUSelectMenu(pgt.MenuScreen):
 		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 100))
 
 class PyongGame(pgt.GameScreen):
+	PADDLE_SPEED = 3
+
 	def __init__(self, parent: pgt.MenuScreen, player2_type: Player2Type):
 		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, parent.frame_rate)
 		self.font = parent.font
 		self.player2_type = player2_type
 		self.paddle_size = Point(5, 50)
-		self.player1_paddle_pos = Point(3, 0)
-		self.player2_paddle_pos = Point(self.window_size.x - self.paddle_size.x - 3, 0)
+		self.player1_paddle_rect = Rect(3, 0, *self.paddle_size)
+		self.player2_paddle_rect = Rect(self.window_size.x - self.paddle_size.x - 3, 0, *self.paddle_size)
 		ball_size = Point(6, 6)
 		self.ball_rect = pygame.Rect(*(self.window_size // 2 - ball_size // 2), *ball_size)
+		self.ball_velocity = Point(0, 2)
 		self.score = [0, 0]
 
 
@@ -76,12 +80,35 @@ class PyongGame(pgt.GameScreen):
 		self.screen.blit(p1_score, (self.window_size.x // 2 - p1_score.get_width() // 2 - 15, 3))
 		self.screen.blit(p2_score, (self.window_size.x // 2 - p2_score.get_width() // 2 + 15, 3))
 
+	def player1_move(self):
+		keys = pygame.key.get_pressed()
+		if keys[K_w]:
+			self.player1_paddle_rect.y -= self.PADDLE_SPEED
+			if self.player1_paddle_rect.top < 0:
+				self.player1_paddle_rect.top = 0
+		if keys[K_s]:
+			self.player1_paddle_rect.y += self.PADDLE_SPEED
+			if self.player1_paddle_rect.bottom > self.window_size.y:
+				self.player1_paddle_rect.bottom = self.window_size.y
+
+
+	def update_ball(self):
+		self.ball_rect.topleft += self.ball_velocity
+		if self.ball_rect.top < 0:
+			self.ball_velocity.y *= -1
+			self.ball_rect.top *= -1
+		elif self.ball_rect.bottom >= self.window_size.y:
+			self.ball_rect.bottom = self.window_size.y - (self.ball_rect.bottom - self.window_size.y)
+			self.ball_velocity.y *= -1
+
 	def update(self):
 		self.screen.fill('black')
-		self.draw_paddle(self.player1_paddle_pos)
-		self.draw_paddle(self.player2_paddle_pos)
+		self.draw_paddle(self.player1_paddle_rect.topleft)
+		self.draw_paddle(self.player2_paddle_rect.topleft)
 		self.draw_ball()
 		self.draw_score()
+		self.player1_move()
+		self.update_ball()
 
 def main():
 	'''Driver Code'''
