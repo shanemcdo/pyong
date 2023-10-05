@@ -1,3 +1,3 @@
 pygame==2.5.2
-pygame-tools==0.1.5
+pygame-tools==0.1.6
 recordclass==0.20.1

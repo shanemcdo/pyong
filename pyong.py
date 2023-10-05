@@ -10,12 +10,13 @@ class MainMenu(pgt.MenuScreen):
 		real_size = Point(600, 600)
 		size = real_size // 2
 		super().__init__(pygame.display.set_mode(real_size), real_size, size)
-		self.font = pygame.font.SysFont(pygame.font.get_default_font(), 20)
+		self.font_path = 'assets/PublicPixel.ttf'
+		self.font = pygame.font.Font(self.font_path, 10)
+		self.title_font = pygame.font.Font(self.font_path, 50)
 		self.buttons = [
-			pgt.Button(CPUSelectMenu(self).run, '1 Player', (33, 150, 100, 50), self.font, border_size = 2),
-			pgt.Button(PyongGame(self).run, '2 Players', (167, 150, 100, 50), self.font, border_size = 2),
+			pgt.Button(CPUSelectMenu(self).run, '1 Player', (33, 150, 100, 50), self.font, border_size = 2, antialias = False),
+			pgt.Button(PyongGame(self).run, '2 Players', (167, 150, 100, 50), self.font, border_size = 2, antialias = False),
 		]
-		self.title_font = pygame.font.SysFont(pygame.font.get_default_font(), 60)
 		self.title = self.title_font.render('PYONG', False, 'white')
 
 	def update(self):
