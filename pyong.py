@@ -11,7 +11,8 @@ from math import sin, cos
 class Player2Type(Enum):
 	HUMAN = 1
 	EASY_CPU = 2
-	HARD_CPU = 3
+	MEDIUM_CPU = 3
+	HARD_CPU = 4
 
 class MainMenu(pgt.MenuScreen):
 	def __init__(self):
@@ -39,8 +40,9 @@ class CPUSelectMenu(pgt.MenuScreen):
 		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, parent.frame_rate)
 		self.font = parent.font
 		self.buttons = [
-			pgt.Button(PyongGame(self, Player2Type.EASY_CPU).run, 'Easy', (33, 150, 100, 50), self.font, border_size = 2, antialias = False),
-			pgt.Button(PyongGame(self, Player2Type.HARD_CPU).run, 'Hard', (167, 150, 100, 50), self.font, border_size = 2, antialias = False),
+			pgt.Button(PyongGame(self, Player2Type.EASY_CPU).run, 'Easy', (100, 100, 100, 40), self.font, border_size = 2, antialias = False),
+			pgt.Button(PyongGame(self, Player2Type.MEDIUM_CPU).run, 'Medium', (100, 160, 100, 40), self.font, border_size = 2, antialias = False),
+			pgt.Button(PyongGame(self, Player2Type.HARD_CPU).run, 'Hard', (100, 220, 100, 40), self.font, border_size = 2, antialias = False),
 			pgt.Button(self.stop, 'Back', (10, 10, 50, 30), self.font, border_size = 2, antialias = False)
 		]
 		self.title_font = pygame.font.Font(parent.font_path, 18)
@@ -115,11 +117,10 @@ class PyongGame(pgt.GameScreen):
 					if self.player2_paddle_rect.bottom > self.window_size.y:
 						self.player2_paddle_rect.bottom = self.window_size.y
 			case Player2Type.EASY_CPU:
-				# TODO make this medium and limit range on easy
-				if self.player2_paddle_rect.centery < self.ball_rect.centery:
-					self.player2_paddle_rect.centery += self.PADDLE_SPEED
-				elif self.player2_paddle_rect.centery > self.ball_rect.centery:
-					self.player2_paddle_rect.centery -= self.PADDLE_SPEED
+				if self.ball_rect.centerx > self.window_size.x // 2:
+					self.chase_ball(self.player2_paddle_rect)
+			case Player2Type.MEDIUM_CPU:
+				self.chase_ball(self.player2_paddle_rect)
 			case Player2Type.HARD_CPU:
 				if self.ball_velocity.x > 0:
 					if self.ball_trajectory_end_y is None:
@@ -132,6 +133,15 @@ class PyongGame(pgt.GameScreen):
 					self.player2_paddle_rect.centery -= self.PADDLE_SPEED
 				elif self.player2_paddle_rect.centery < goal_point:
 					self.player2_paddle_rect.centery += self.PADDLE_SPEED
+
+	def chase_ball(self, rect: pygame.Rect):
+		'''
+		Simple algorithm where the rect goes to where the ball currently is
+		'''
+		if rect.centery < self.ball_rect.centery:
+			rect.centery += self.PADDLE_SPEED
+		elif rect.centery > self.ball_rect.centery:
+			rect.centery -= self.PADDLE_SPEED
 
 	def calculate_ball_trajectory(self):
 		'''
