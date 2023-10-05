@@ -30,9 +30,6 @@ class MainMenu(pgt.MenuScreen):
 			pgt.Button(sys.exit, 'Exit', (120, 220, 60, 30), self.font, border_size = 2, antialias = False),
 		]
 		self.title = self.title_font.render('PYONG', False, 'white')
-
-	def update(self):
-		super().update()
 		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 70))
 
 class CPUSelectMenu(pgt.MenuScreen):
@@ -47,13 +44,10 @@ class CPUSelectMenu(pgt.MenuScreen):
 		]
 		self.title_font = pygame.font.Font(FONT_PATH, 18)
 		self.title = self.title_font.render('CPU Difficulty', False, 'white')
+		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 50))
 
 	def stop(self):
 		self.running = False
-
-	def update(self):
-		super().update()
-		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 50))
 
 class PyongGame(pgt.GameScreen):
 	PADDLE_SPEED = 2
