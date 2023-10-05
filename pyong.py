@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import sys
+import pygame
 import pygame_tools as pgt
 from pygame_tools import Point
-import pygame
 from enum import Enum
 
 class Player2Type(Enum):
@@ -22,6 +23,7 @@ class MainMenu(pgt.MenuScreen):
 		self.buttons = [
 			pgt.Button(CPUSelectMenu(self).run, '1 Player', (33, 150, 100, 50), self.font, border_size = 2, antialias = False),
 			pgt.Button(PyongGame(self, Player2Type.HUMAN).run, '2 Players', (167, 150, 100, 50), self.font, border_size = 2, antialias = False),
+			pgt.Button(sys.exit, 'Exit', (120, 220, 60, 30), self.font, border_size = 2, antialias = False),
 		]
 		self.title = self.title_font.render('PYONG', False, 'white')
 
@@ -41,7 +43,7 @@ class CPUSelectMenu(pgt.MenuScreen):
 		]
 		self.title_font = pygame.font.Font(parent.font_path, 18)
 		self.title = self.title_font.render('CPU Difficulty', False, 'white')
-	
+
 	def stop(self):
 		self.running = False
 
@@ -54,7 +56,6 @@ class PyongGame(pgt.GameScreen):
 		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, parent.frame_rate)
 		self.font = parent.font
 		self.player2_type = player2_type
-		print(self.player2_type)
 
 def main():
 	'''Driver Code'''
