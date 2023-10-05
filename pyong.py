@@ -8,6 +8,8 @@ from pygame.locals import *
 from enum import Enum
 from math import sin, cos
 
+FONT_PATH = 'assets/PublicPixel.ttf'
+
 class Player2Type(Enum):
 	HUMAN = 1
 	EASY_CPU = 2
@@ -20,12 +22,11 @@ class MainMenu(pgt.MenuScreen):
 		real_size = Point(600, 600)
 		size = real_size // 2
 		super().__init__(pygame.display.set_mode(real_size), real_size, size)
-		self.font_path = 'assets/PublicPixel.ttf'
-		self.font = pygame.font.Font(self.font_path, 10)
-		self.title_font = pygame.font.Font(self.font_path, 50)
+		self.font = pygame.font.Font(FONT_PATH, 10)
+		self.title_font = pygame.font.Font(FONT_PATH, 50)
 		self.buttons = [
-			pgt.Button(CPUSelectMenu(self).run, '1 Player', (33, 150, 100, 50), self.font, border_size = 2, antialias = False),
-			pgt.Button(PyongGame(self, Player2Type.HUMAN).run, '2 Players', (167, 150, 100, 50), self.font, border_size = 2, antialias = False),
+			pgt.Button(lambda: CPUSelectMenu(self).run(), '1 Player', (33, 150, 100, 50), self.font, border_size = 2, antialias = False),
+			pgt.Button(lambda: PyongGame(self, Player2Type.HUMAN).run(), '2 Players', (167, 150, 100, 50), self.font, border_size = 2, antialias = False),
 			pgt.Button(sys.exit, 'Exit', (120, 220, 60, 30), self.font, border_size = 2, antialias = False),
 		]
 		self.title = self.title_font.render('PYONG', False, 'white')
@@ -36,16 +37,15 @@ class MainMenu(pgt.MenuScreen):
 
 class CPUSelectMenu(pgt.MenuScreen):
 	def __init__(self, parent: MainMenu):
-		print(parent.screen)
 		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, parent.frame_rate)
 		self.font = parent.font
 		self.buttons = [
-			pgt.Button(PyongGame(self, Player2Type.EASY_CPU).run, 'Easy', (100, 100, 100, 40), self.font, border_size = 2, antialias = False),
-			pgt.Button(PyongGame(self, Player2Type.MEDIUM_CPU).run, 'Medium', (100, 160, 100, 40), self.font, border_size = 2, antialias = False),
-			pgt.Button(PyongGame(self, Player2Type.HARD_CPU).run, 'Hard', (100, 220, 100, 40), self.font, border_size = 2, antialias = False),
+			pgt.Button(lambda: PyongGame(self, Player2Type.EASY_CPU).run(), 'Easy', (100, 100, 100, 40), self.font, border_size = 2, antialias = False),
+			pgt.Button(lambda: PyongGame(self, Player2Type.MEDIUM_CPU).run(), 'Medium', (100, 160, 100, 40), self.font, border_size = 2, antialias = False),
+			pgt.Button(lambda: PyongGame(self, Player2Type.HARD_CPU).run(), 'Hard', (100, 220, 100, 40), self.font, border_size = 2, antialias = False),
 			pgt.Button(self.stop, 'Back', (10, 10, 50, 30), self.font, border_size = 2, antialias = False)
 		]
-		self.title_font = pygame.font.Font(parent.font_path, 18)
+		self.title_font = pygame.font.Font(FONT_PATH, 18)
 		self.title = self.title_font.render('CPU Difficulty', False, 'white')
 
 	def stop(self):
@@ -53,12 +53,13 @@ class CPUSelectMenu(pgt.MenuScreen):
 
 	def update(self):
 		super().update()
-		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 100))
+		self.screen.blit(self.title, (self.window_size.x // 2 - self.title.get_width() / 2, 50))
 
 class PyongGame(pgt.GameScreen):
 	PADDLE_SPEED = 2
 	BALL_SPEED = 5
 	BOUNCE_ANGLE = 1.047198 # 60 deg
+	MAX_SCORE = 10
 
 	def __init__(self, parent: pgt.MenuScreen, player2_type: Player2Type):
 		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size, 60)
@@ -194,6 +195,30 @@ class PyongGame(pgt.GameScreen):
 		self.player1_move()
 		self.player2_move()
 		self.update_ball()
+		if max(self.score) >= self.MAX_SCORE:
+			self.running = False
+			GameEndScreen(self).run()
+
+class GameEndScreen(pgt.MenuScreen):
+	def __init__(self, parent: PyongGame):
+		super().__init__(parent.real_screen, parent.real_window_size, parent.window_size)
+		self.font = parent.font
+		self.buttons = [
+			pgt.Button(self.stop, 'Continue', (33, 200, 100, 50), self.font, border_size = 2, antialias = False),
+			pgt.Button(sys.exit, 'Exit', (167, 200, 100, 50), self.font, border_size = 2, antialias = False),
+		]
+		title_font = pygame.font.Font(FONT_PATH, 20)
+		title = title_font.render(f'Player {1 if parent.score[0] > parent.score[1] else 2} Wins!', False, 'white')
+		self.screen.blit(title, (self.window_size.x // 2 - title.get_width() // 2, 75))
+		text_score = (
+			title_font.render(str(parent.score[0]), False, 'White'),
+			title_font.render(str(parent.score[1]), False, 'White'),
+		)
+		self.screen.blit(text_score[0], (self.window_size.x // 2 - text_score[0].get_width() // 2 - 20, 120))
+		self.screen.blit(text_score[1], (self.window_size.x // 2 - text_score[1].get_width() // 2 + 20, 120))
+
+	def stop(self):
+		self.running = False
 
 def main():
 	'''Driver Code'''
