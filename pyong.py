@@ -69,6 +69,7 @@ class PyongGame(pgt.GameScreen):
 		self.ball_rect = pygame.Rect(0, 0, 6, 6)
 		self.reset_ball_and_paddles()
 		self.score = [0, 0]
+		self.ball_trajectory_end_y = None
 
 	def reset_ball_and_paddles(self):
 		self.ball_rect.center = self.window_size // 2
@@ -120,18 +121,39 @@ class PyongGame(pgt.GameScreen):
 				elif self.player2_paddle_rect.centery > self.ball_rect.centery:
 					self.player2_paddle_rect.centery -= self.PADDLE_SPEED
 			case Player2Type.HARD_CPU:
-				# TODO: calculate trajectory
-				pass
+				if self.ball_velocity.x > 0:
+					if self.ball_trajectory_end_y is None:
+						self.ball_trajectory_end_y = self.calculate_ball_trajectory()
+					goal_point = self.ball_trajectory_end_y
+				else:
+					self.ball_trajectory_end_y = None
+					goal_point = self.window_size.y // 2
+				if self.player2_paddle_rect.centery > goal_point:
+					self.player2_paddle_rect.centery -= self.PADDLE_SPEED
+				elif self.player2_paddle_rect.centery < goal_point:
+					self.player2_paddle_rect.centery += self.PADDLE_SPEED
 
+	def calculate_ball_trajectory(self):
+		'''
+		returns the final y position of the ball after traveling
+		'''
+		ball_rect = self.ball_rect.copy()
+		ball_vel = Point(*self.ball_velocity)
+		while ball_rect.centerx >= 0 and ball_rect.centerx < self.window_size.x:
+			self.bounce_ball_vertical(ball_rect, ball_vel)
+		return ball_rect.centery
+
+	def bounce_ball_vertical(self, ball_rect, ball_vel):
+		ball_rect.topleft += ball_vel
+		if ball_rect.top < 0:
+			ball_vel.y *= -1
+			ball_rect.top *= -1
+		elif ball_rect.bottom >= self.window_size.y:
+			ball_rect.bottom = self.window_size.y - (ball_rect.bottom - self.window_size.y)
+			ball_vel.y *= -1
 
 	def update_ball(self):
-		self.ball_rect.topleft += self.ball_velocity
-		if self.ball_rect.top < 0:
-			self.ball_velocity.y *= -1
-			self.ball_rect.top *= -1
-		elif self.ball_rect.bottom >= self.window_size.y:
-			self.ball_rect.bottom = self.window_size.y - (self.ball_rect.bottom - self.window_size.y)
-			self.ball_velocity.y *= -1
+		self.bounce_ball_vertical(self.ball_rect, self.ball_velocity)
 		if self.ball_rect.left < 0:
 			self.score[1] += 1
 			self.reset_ball_and_paddles()
